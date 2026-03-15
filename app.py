@@ -46,6 +46,20 @@ def _parse_probs(payload: dict, key: str, default: dict) -> dict:
     return {"Pretzel": p / total, "Bread": b / total, "Cake": c / total}
 
 
+def _parse_prices(payload: dict, key: str, default: dict) -> dict:
+    """Parse optional custom prices, fallback to defaults."""
+    raw = payload.get(key)
+    if not raw or not isinstance(raw, dict):
+        return dict(default)
+    prices = {}
+    for product in ("Pretzel", "Bread", "Cake"):
+        try:
+            prices[product] = float(raw.get(product, default[product]))
+        except (TypeError, ValueError, KeyError):
+            prices[product] = float(default.get(product, 0.0))
+    return prices
+
+
 def build_params_from_payload(payload: dict) -> dict:
     """
     Build a simulation parameter dict from JSON payload.
@@ -74,6 +88,7 @@ def build_params_from_payload(payload: dict) -> dict:
 
     base_probs = _parse_probs(payload, "base_probs", base["base_probs"])
     promo_probs = _parse_probs(payload, "promo_probs", base["promo_probs"])
+    prices = _parse_prices(payload, "prices", base["prices"])
 
     hours_open = closing - opening
     peak_hour_indices = [
@@ -95,6 +110,7 @@ def build_params_from_payload(payload: dict) -> dict:
         extra_rev_mult=extra_rev_mult,
         base_probs=base_probs,
         promo_probs=promo_probs,
+        prices=prices,
     )
     return params
 
