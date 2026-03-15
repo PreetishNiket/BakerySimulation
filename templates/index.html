@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BrotHaus – Interactive Sales Simulation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 20px;
+      background: #f4f7fb;
+      color: #12324b;
+    }
+    h1 {
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      margin-bottom: 18px;
+      font-size: 0.9rem;
+      color: #556b8a;
+    }
+    .panel {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    }
+    .row {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+      color: #44546a;
+    }
+    input[type="number"],
+    input[type="range"] {
+      width: 100%;
+    }
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .range-row output {
+      min-width: 40px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    button {
+      padding: 8px 18px;
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #24599a;
+    }
+    .results h2 {
+      margin-top: 0;
+    }
+    .results p {
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .results strong {
+      color: #1a4f80;
+    }
+  </style>
+</head>
+<body>
+  <h1>BrotHaus – Interactive Sales Simulation</h1>
+  <div class="subtitle">
+    Adjust parameters (hours, demand, peak effect) and click <strong>Simulate</strong> to see how daily revenue and product mix change.
+    Base product ratio is fixed at <strong>Pretzel:Bread:Cake = 50:30:20</strong>.
+  </div>
+
+  <form method="post">
+    <div class="panel">
+      <h3>Time & Demand</h3>
+
+      <div class="row">
+        <label for="opening_hour">Opening hour (0–23)</label>
+        <input type="number"
+               id="opening_hour"
+               name="opening_hour"
+               min="0" max="23"
+               value="{{ defaults.opening_hour }}">
+      </div>
+
+      <div class="row">
+        <label for="closing_hour">Closing hour (0–23)</label>
+        <input type="number"
+               id="closing_hour"
+               name="closing_hour"
+               min="0" max="23"
+               value="{{ defaults.closing_hour }}">
+      </div>
+
+      <div class="row">
+        <label for="avg_customers">Average customers per hour</label>
+        <div class="range-row">
+          <input type="range"
+                 id="avg_customers"
+                 name="avg_customers"
+                 min="5" max="40" step="1"
+                 value="{{ defaults.avg_customers_per_hour }}"
+                 oninput="avgOut.value = this.value">
+          <output id="avgOut">{{ defaults.avg_customers_per_hour }}</output>
+        </div>
+      </div>
+
+      <div class="row">
+        <label>Peak period (clock hours, e.g. 12–14 for 12 PM–2 PM)</label>
+        <div style="display:flex; gap:8px;">
+          <input type="number"
+                 name="peak_start"
+                 min="0" max="23"
+                 value="{{ defaults.peak_start_hour }}">
+          <span>to</span>
+          <input type="number"
+                 name="peak_end"
+                 min="0" max="23"
+                 value="{{ defaults.peak_end_hour }}">
+        </div>
+      </div>
+
+      <div class="row">
+        <label for="peak_mult">Peak multiplier (1.0–2.0, e.g. 1.4 = +40%)</label>
+        <div class="range-row">
+          <input type="range"
+                 id="peak_mult"
+                 name="peak_mult"
+                 min="1.0" max="2.0" step="0.1"
+                 value="{{ defaults.peak_multiplier }}"
+                 oninput="peakOut.value = this.value">
+          <output id="peakOut">{{ defaults.peak_multiplier }}</output>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Products</h3>
+      <p style="font-size:0.85rem; color:#556b8a; margin-top:0;">
+        Base purchase probabilities are fixed at <strong>50% Pretzel, 30% Bread, 20% Cake</strong>.
+        Pretzel promotion scenario uses <strong>70% Pretzel, 20% Bread, 10% Cake</strong>.
+      </p>
+      <p style="font-size:0.85rem; color:#556b8a;">
+        Prices (INR): Pretzel ₹{{ defaults.prices["Pretzel"] }}, Bread ₹{{ defaults.prices["Bread"] }}, Cake ₹{{ defaults.prices["Cake"] }}.
+      </p>
+    </div>
+
+    <button type="submit">Simulate</button>
+  </form>
+
+  {% if results %}
+    <div class="panel results">
+      <h2>Results (100-day Monte Carlo)</h2>
+
+      <h3>No Promotion</h3>
+      <p>
+        <strong>Expected daily revenue:</strong>
+        ₹{{ results.base.avg | round(0) }}<br>
+        <strong>Revenue range:</strong>
+        ₹{{ results.base.min }} – ₹{{ results.base.max }}<br>
+        <strong>Revenue standard deviation:</strong>
+        ₹{{ results.base.std | round(0) }}<br>
+        <strong>Most popular product:</strong>
+        {{ results.base.most_popular }}
+      </p>
+
+      <h3>Pretzel Festival Promotion</h3>
+      <p>
+        <strong>Expected daily revenue:</strong>
+        ₹{{ results.promo.avg | round(0) }}<br>
+        <strong>Revenue range:</strong>
+        ₹{{ results.promo.min }} – ₹{{ results.promo.max }}<br>
+        <strong>Revenue standard deviation:</strong>
+        ₹{{ results.promo.std | round(0) }}<br>
+        <strong>Most popular product:</strong>
+        {{ results.promo.most_popular }}
+      </p>
+    </div>
+  {% endif %}
+</body>
+</html>
+

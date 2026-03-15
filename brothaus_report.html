@@ -1,0 +1,1018 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BrotHaus Sales Simulation Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *,*::before,*::after { box-sizing:border-box;margin:0;padding:0; }
+    :root {
+      --p1:#4da3ff; --p2:#2b6cb0; --p3:#1a4f80;
+      --soft:#e3f2ff; --mid:#b3d4ff; --light:#f4f9ff;
+      --white:#ffffff; --text:#12324b; --muted:#6a8bad; --faint:#d4e6ff;
+    }
+    body {
+      background:var(--light);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--text);
+      min-height:100vh;
+      padding-bottom:80px;
+    }
+    header {
+      background:linear-gradient(135deg,#a0c4ff 0%,#4da3ff 45%,#e3f2ff 100%);
+      padding:40px 24px 32px;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .blob { position:absolute;border-radius:50%;pointer-events:none; }
+    .hinner { position:relative;z-index:1; }
+    .hemoji { font-size:3.2rem;display:block;margin-bottom:8px; }
+    header h1 {
+      font-size:clamp(2rem,5vw,3rem);
+      color:#fff;
+      line-height:1.05;
+      text-shadow:0 3px 14px rgba(18,50,75,0.35);
+    }
+    header p { color:rgba(255,255,255,0.9);font-weight:600;font-size:14px;margin-top:8px; }
+    .chip {
+      display:inline-block;
+      margin-top:10px;
+      padding:6px 14px;
+      border-radius:999px;
+      background:rgba(0,0,0,0.18);
+      color:#fff;
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .wrap { max-width:1120px;margin:0 auto;padding:32px 18px 40px; }
+    .sec-title {
+      font-size:1.3rem;
+      font-weight:800;
+      color:var(--p2);
+      margin-bottom:18px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .sec-title span { font-size:1.5rem; }
+    .cards3 {
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:16px;
+      margin-bottom:26px;
+    }
+    .card {
+      background:var(--white);
+      border-radius:18px;
+      padding:18px 18px 16px;
+      border:2px solid var(--faint);
+      box-shadow:0 6px 22px rgba(77,163,255,0.18);
+    }
+    .pill-label {
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    .pill-val {
+      font-size:1.7rem;
+      font-weight:800;
+      color:var(--p3);
+      line-height:1.1;
+    }
+    .pill-sub { font-size:12px;font-weight:600;color:var(--muted);margin-top:4px; }
+    .cmp-wrap {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+      margin-bottom:28px;
+    }
+    .cmp-box {
+      border-radius:18px;
+      padding:18px 18px 14px;
+      border:2px solid var(--faint);
+      background:linear-gradient(135deg,#f4f9ff,#fff);
+    }
+    .cmp-box.promo { background:linear-gradient(135deg,rgba(77,163,255,.12),rgba(179,212,255,.3)); }
+    .cmp-head { font-weight:800;color:var(--p2);margin-bottom:10px;font-size:1.05rem; }
+    .cmp-row {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:6px;
+      font-size:13px;
+    }
+    .cmp-key { font-weight:600;color:var(--muted); }
+    .cmp-v { font-weight:800;color:var(--text); }
+    .tbl-wrap { overflow-x:auto;margin-bottom:26px; }
+    table.tbl { width:100%;border-collapse:collapse;font-size:12px; }
+    table.tbl thead tr { background:linear-gradient(90deg,var(--p1),var(--mid));color:#fff; }
+    table.tbl th,table.tbl td { padding:8px 10px;border-bottom:1px solid var(--faint);text-align:left;white-space:nowrap; }
+    table.tbl tbody tr:nth-child(even) { background:#fff9fb; }
+    table.tbl tbody tr:nth-child(odd) { background:var(--white); }
+    .insight {
+      background:linear-gradient(135deg,var(--p1),var(--p2));
+      color:#fff;
+      border-radius:18px;
+      padding:20px 22px;
+      margin-bottom:26px;
+    }
+    .insight-title { font-weight:800;font-size:1.1rem;margin-bottom:10px; }
+    .insight ul { margin-left:18px;font-size:13px;line-height:1.7; }
+    footer {
+      text-align:center;
+      margin-top:36px;
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.1em;
+      text-transform:uppercase;
+      color:#9abff0;
+    }
+    @media(max-width:720px) {
+      .cards3,.cmp-wrap { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+</html>
+<body>
+  <header>
+    <div class="blob" style="top:-20px;left:-20px;width:130px;height:130px;background:rgba(255,255,255,0.18)"></div>
+    <div class="blob" style="top:8px;right:-30px;width:170px;height:170px;background:rgba(255,255,255,0.12)"></div>
+    <div class="blob" style="bottom:-26px;left:32%;width:110px;height:110px;background:rgba(255,255,255,0.15)"></div>
+    <div class="hinner">
+      <span class="hemoji">🥐</span>
+      <h1>BrotHaus Bakery · Sales Simulation</h1>
+      <p>Poisson arrivals · 100-day Monte Carlo · Pretzel Festival Promotion</p>
+      <div class="chip">Open 7:00 – 21:00 (14 h) · Peak 12–14 · INR</div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="sec-title"><span>📌</span>Executive Snapshot</div>
+    <div class="cards3">
+      <div class="card">
+        <div class="pill-label">Avg Daily Revenue (No Promo)</div>
+        <div class="pill-val">₹40,718</div>
+        <div class="pill-sub">Range ₹33,250 – ₹49,450</div>
+      </div>
+      <div class="card">
+        <div class="pill-label">Avg Daily Revenue (Promotion)</div>
+        <div class="pill-val">₹30,188</div>
+        <div class="pill-sub">Range ₹24,500 – ₹35,700</div>
+      </div>
+      <div class="card">
+        <div class="pill-label">Pretzel Share of Units</div>
+        <div class="pill-val">49.8% → 69.7%</div>
+        <div class="pill-sub">No promo → with Pretzel Festival</div>
+      </div>
+    </div>
+
+    <div class="sec-title"><span>📊</span>Revenue & Mix Comparison</div>
+    <div class="cmp-wrap">
+      <div class="cmp-box">
+        <div class="cmp-head">Normal Operations</div>
+        <div class="cmp-row">
+          <div class="cmp-key">Expected daily revenue</div>
+          <div class="cmp-v">₹40,718</div>
+        </div>
+        <div class="cmp-row">
+          <div class="cmp-key">Revenue standard deviation</div>
+          <div class="cmp-v">₹2,698</div>
+        </div>
+        <div class="cmp-row">
+          <div class="cmp-key">Most popular product</div>
+          <div class="cmp-v">Pretzel_Sales</div>
+        </div>
+      </div>
+      <div class="cmp-box promo">
+        <div class="cmp-head">Pretzel Festival Promotion</div>
+        <div class="cmp-row">
+          <div class="cmp-key">Expected daily revenue</div>
+          <div class="cmp-v">₹30,188</div>
+        </div>
+        <div class="cmp-row">
+          <div class="cmp-key">Revenue standard deviation</div>
+          <div class="cmp-v">₹2,070</div>
+        </div>
+        <div class="cmp-row">
+          <div class="cmp-key">Most popular product</div>
+          <div class="cmp-v">Pretzel_Sales</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-title"><span>🕒</span>Simulation Setup</div>
+    <div class="card" style="margin-bottom:26px;">
+      <div class="pill-label" style="margin-bottom:6px;">Run Configuration</div>
+      <div style="font-size:13px;font-weight:600;color:var(--muted);line-height:1.7;">
+        1. <strong>Bakery Operating Hours:</strong> 7:00 – 21:00 (14 hours of trading)<br/>
+        2. <strong>Pretzel Festival:</strong> days 8 to 14 in the 60-day horizon<br/>
+        3. <strong>Weekend Effect:</strong> every Saturday (+40% λ) and Sunday (+50% λ)<br/>
+        4. <strong>60-Day Revenue Simulation:</strong> Monte Carlo engine with Poisson arrivals and product choice probabilities
+      </div>
+    </div>
+
+    <div class="sec-title"><span>📈</span>60-Day Revenue Simulation</div>
+    <div class="card" style="margin-bottom:26px;">
+      <div class="pill-label" style="margin-bottom:10px;">Daily Revenue – No Promotion vs Promotion</div>
+      <canvas id="revenueTrendChart" height="120"></canvas>
+    </div>
+
+    <div class="card" style="margin-bottom:26px;">
+      <div class="pill-label" style="margin-bottom:10px;">Product Mix – Units Sold</div>
+      <div style="display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;">
+        <div style="flex:1;min-width:240px;">
+          <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">No Promotion</div>
+          <canvas id="mixBaseChart" height="160"></canvas>
+        </div>
+        <div style="flex:1;min-width:240px;">
+          <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">With Pretzel Festival</div>
+          <canvas id="mixPromoChart" height="160"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-title"><span>📋</span>Revenue Breakdown by Day Type</div>
+    <div class="tbl-wrap">
+      <table class="dataframe tbl full-log">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Day</th>
+      <th>Weekday</th>
+      <th>Mode</th>
+      <th>Lambda_Mult</th>
+      <th>Customers</th>
+      <th>Pretzel_Sales</th>
+      <th>Bread_Sales</th>
+      <th>Cake_Sales</th>
+      <th>Revenue_INR</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>Mon</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>330</td>
+      <td>148</td>
+      <td>107</td>
+      <td>75</td>
+      <td>₹47,550</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Tue</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>304</td>
+      <td>150</td>
+      <td>88</td>
+      <td>66</td>
+      <td>₹41,600</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Wed</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>319</td>
+      <td>168</td>
+      <td>90</td>
+      <td>61</td>
+      <td>₹41,650</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Thu</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>300</td>
+      <td>139</td>
+      <td>87</td>
+      <td>74</td>
+      <td>₹42,850</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Fri</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>303</td>
+      <td>146</td>
+      <td>95</td>
+      <td>62</td>
+      <td>₹41,800</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Sat</td>
+      <td>Weekend</td>
+      <td>x1.4</td>
+      <td>300</td>
+      <td>146</td>
+      <td>95</td>
+      <td>59</td>
+      <td>₹41,050</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Sun</td>
+      <td>Weekend</td>
+      <td>x1.5</td>
+      <td>284</td>
+      <td>129</td>
+      <td>90</td>
+      <td>65</td>
+      <td>₹40,700</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>Mon</td>
+      <td>Festival</td>
+      <td>x1.0</td>
+      <td>307</td>
+      <td>220</td>
+      <td>56</td>
+      <td>31</td>
+      <td>₹29,950</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>Tue</td>
+      <td>Festival</td>
+      <td>x1.0</td>
+      <td>296</td>
+      <td>197</td>
+      <td>72</td>
+      <td>27</td>
+      <td>₹31,000</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>Wed</td>
+      <td>Festival</td>
+      <td>x1.0</td>
+      <td>310</td>
+      <td>224</td>
+      <td>61</td>
+      <td>25</td>
+      <td>₹29,650</td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>Thu</td>
+      <td>Festival</td>
+      <td>x1.0</td>
+      <td>286</td>
+      <td>191</td>
+      <td>60</td>
+      <td>35</td>
+      <td>₹30,300</td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>Fri</td>
+      <td>Festival</td>
+      <td>x1.0</td>
+      <td>297</td>
+      <td>205</td>
+      <td>55</td>
+      <td>37</td>
+      <td>₹30,500</td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>Sat</td>
+      <td>Festival</td>
+      <td>x1.4</td>
+      <td>327</td>
+      <td>250</td>
+      <td>56</td>
+      <td>21</td>
+      <td>₹28,950</td>
+    </tr>
+    <tr>
+      <td>14</td>
+      <td>Sun</td>
+      <td>Festival</td>
+      <td>x1.5</td>
+      <td>296</td>
+      <td>212</td>
+      <td>51</td>
+      <td>33</td>
+      <td>₹29,050</td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td>Mon</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>315</td>
+      <td>156</td>
+      <td>96</td>
+      <td>63</td>
+      <td>₹42,750</td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>Tue</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>291</td>
+      <td>143</td>
+      <td>88</td>
+      <td>60</td>
+      <td>₹39,750</td>
+    </tr>
+    <tr>
+      <td>17</td>
+      <td>Wed</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>327</td>
+      <td>164</td>
+      <td>96</td>
+      <td>67</td>
+      <td>₹44,150</td>
+    </tr>
+    <tr>
+      <td>18</td>
+      <td>Thu</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>299</td>
+      <td>141</td>
+      <td>88</td>
+      <td>70</td>
+      <td>₹42,150</td>
+    </tr>
+    <tr>
+      <td>19</td>
+      <td>Fri</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>351</td>
+      <td>163</td>
+      <td>114</td>
+      <td>74</td>
+      <td>₹49,450</td>
+    </tr>
+    <tr>
+      <td>20</td>
+      <td>Sat</td>
+      <td>Weekend</td>
+      <td>x1.4</td>
+      <td>262</td>
+      <td>127</td>
+      <td>69</td>
+      <td>66</td>
+      <td>₹36,650</td>
+    </tr>
+    <tr>
+      <td>21</td>
+      <td>Sun</td>
+      <td>Weekend</td>
+      <td>x1.5</td>
+      <td>304</td>
+      <td>153</td>
+      <td>93</td>
+      <td>58</td>
+      <td>₹40,750</td>
+    </tr>
+    <tr>
+      <td>22</td>
+      <td>Mon</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>304</td>
+      <td>144</td>
+      <td>95</td>
+      <td>65</td>
+      <td>₹42,450</td>
+    </tr>
+    <tr>
+      <td>23</td>
+      <td>Tue</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>316</td>
+      <td>154</td>
+      <td>92</td>
+      <td>70</td>
+      <td>₹43,600</td>
+    </tr>
+    <tr>
+      <td>24</td>
+      <td>Wed</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>296</td>
+      <td>143</td>
+      <td>83</td>
+      <td>70</td>
+      <td>₹41,250</td>
+    </tr>
+    <tr>
+      <td>25</td>
+      <td>Thu</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>298</td>
+      <td>145</td>
+      <td>89</td>
+      <td>64</td>
+      <td>₹41,050</td>
+    </tr>
+    <tr>
+      <td>26</td>
+      <td>Fri</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>316</td>
+      <td>155</td>
+      <td>101</td>
+      <td>60</td>
+      <td>₹42,950</td>
+    </tr>
+    <tr>
+      <td>27</td>
+      <td>Sat</td>
+      <td>Weekend</td>
+      <td>x1.4</td>
+      <td>301</td>
+      <td>150</td>
+      <td>82</td>
+      <td>69</td>
+      <td>₹41,150</td>
+    </tr>
+    <tr>
+      <td>28</td>
+      <td>Sun</td>
+      <td>Weekend</td>
+      <td>x1.5</td>
+      <td>304</td>
+      <td>140</td>
+      <td>100</td>
+      <td>64</td>
+      <td>₹43,000</td>
+    </tr>
+    <tr>
+      <td>29</td>
+      <td>Mon</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>291</td>
+      <td>157</td>
+      <td>79</td>
+      <td>55</td>
+      <td>₹37,400</td>
+    </tr>
+    <tr>
+      <td>30</td>
+      <td>Tue</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>290</td>
+      <td>137</td>
+      <td>101</td>
+      <td>52</td>
+      <td>₹40,050</td>
+    </tr>
+    <tr>
+      <td>31</td>
+      <td>Wed</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>314</td>
+      <td>173</td>
+      <td>89</td>
+      <td>52</td>
+      <td>₹39,450</td>
+    </tr>
+    <tr>
+      <td>32</td>
+      <td>Thu</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>293</td>
+      <td>137</td>
+      <td>87</td>
+      <td>69</td>
+      <td>₹41,500</td>
+    </tr>
+    <tr>
+      <td>33</td>
+      <td>Fri</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>335</td>
+      <td>170</td>
+      <td>98</td>
+      <td>67</td>
+      <td>₹44,850</td>
+    </tr>
+    <tr>
+      <td>34</td>
+      <td>Sat</td>
+      <td>Weekend</td>
+      <td>x1.4</td>
+      <td>285</td>
+      <td>139</td>
+      <td>93</td>
+      <td>53</td>
+      <td>₹38,800</td>
+    </tr>
+    <tr>
+      <td>35</td>
+      <td>Sun</td>
+      <td>Weekend</td>
+      <td>x1.5</td>
+      <td>313</td>
+      <td>159</td>
+      <td>98</td>
+      <td>56</td>
+      <td>₹41,550</td>
+    </tr>
+    <tr>
+      <td>36</td>
+      <td>Mon</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>286</td>
+      <td>161</td>
+      <td>83</td>
+      <td>42</td>
+      <td>₹35,150</td>
+    </tr>
+    <tr>
+      <td>37</td>
+      <td>Tue</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>325</td>
+      <td>157</td>
+      <td>107</td>
+      <td>61</td>
+      <td>₹44,500</td>
+    </tr>
+    <tr>
+      <td>38</td>
+      <td>Wed</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>277</td>
+      <td>125</td>
+      <td>100</td>
+      <td>52</td>
+      <td>₹39,250</td>
+    </tr>
+    <tr>
+      <td>39</td>
+      <td>Thu</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>327</td>
+      <td>169</td>
+      <td>83</td>
+      <td>75</td>
+      <td>₹43,800</td>
+    </tr>
+    <tr>
+      <td>40</td>
+      <td>Fri</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>277</td>
+      <td>139</td>
+      <td>77</td>
+      <td>61</td>
+      <td>₹37,600</td>
+    </tr>
+    <tr>
+      <td>41</td>
+      <td>Sat</td>
+      <td>Weekend</td>
+      <td>x1.4</td>
+      <td>276</td>
+      <td>138</td>
+      <td>71</td>
+      <td>67</td>
+      <td>₹37,850</td>
+    </tr>
+    <tr>
+      <td>42</td>
+      <td>Sun</td>
+      <td>Weekend</td>
+      <td>x1.5</td>
+      <td>327</td>
+      <td>157</td>
+      <td>107</td>
+      <td>63</td>
+      <td>₹45,000</td>
+    </tr>
+    <tr>
+      <td>43</td>
+      <td>Mon</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>311</td>
+      <td>159</td>
+      <td>104</td>
+      <td>48</td>
+      <td>₹40,750</td>
+    </tr>
+    <tr>
+      <td>44</td>
+      <td>Tue</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>285</td>
+      <td>145</td>
+      <td>80</td>
+      <td>60</td>
+      <td>₹38,250</td>
+    </tr>
+    <tr>
+      <td>45</td>
+      <td>Wed</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>274</td>
+      <td>140</td>
+      <td>79</td>
+      <td>55</td>
+      <td>₹36,550</td>
+    </tr>
+    <tr>
+      <td>46</td>
+      <td>Thu</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>285</td>
+      <td>135</td>
+      <td>95</td>
+      <td>55</td>
+      <td>₹39,500</td>
+    </tr>
+    <tr>
+      <td>47</td>
+      <td>Fri</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>281</td>
+      <td>148</td>
+      <td>75</td>
+      <td>58</td>
+      <td>₹36,900</td>
+    </tr>
+    <tr>
+      <td>48</td>
+      <td>Sat</td>
+      <td>Weekend</td>
+      <td>x1.4</td>
+      <td>288</td>
+      <td>131</td>
+      <td>98</td>
+      <td>59</td>
+      <td>₹40,900</td>
+    </tr>
+    <tr>
+      <td>49</td>
+      <td>Sun</td>
+      <td>Weekend</td>
+      <td>x1.5</td>
+      <td>289</td>
+      <td>123</td>
+      <td>100</td>
+      <td>66</td>
+      <td>₹42,650</td>
+    </tr>
+    <tr>
+      <td>50</td>
+      <td>Mon</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>296</td>
+      <td>166</td>
+      <td>69</td>
+      <td>61</td>
+      <td>₹37,350</td>
+    </tr>
+    <tr>
+      <td>51</td>
+      <td>Tue</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>317</td>
+      <td>161</td>
+      <td>87</td>
+      <td>69</td>
+      <td>₹42,700</td>
+    </tr>
+    <tr>
+      <td>52</td>
+      <td>Wed</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>308</td>
+      <td>150</td>
+      <td>97</td>
+      <td>61</td>
+      <td>₹42,150</td>
+    </tr>
+    <tr>
+      <td>53</td>
+      <td>Thu</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>271</td>
+      <td>135</td>
+      <td>73</td>
+      <td>63</td>
+      <td>₹37,100</td>
+    </tr>
+    <tr>
+      <td>54</td>
+      <td>Fri</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>304</td>
+      <td>166</td>
+      <td>85</td>
+      <td>53</td>
+      <td>₹38,550</td>
+    </tr>
+    <tr>
+      <td>55</td>
+      <td>Sat</td>
+      <td>Weekend</td>
+      <td>x1.4</td>
+      <td>313</td>
+      <td>156</td>
+      <td>98</td>
+      <td>59</td>
+      <td>₹42,150</td>
+    </tr>
+    <tr>
+      <td>56</td>
+      <td>Sun</td>
+      <td>Weekend</td>
+      <td>x1.5</td>
+      <td>311</td>
+      <td>159</td>
+      <td>89</td>
+      <td>63</td>
+      <td>₹41,500</td>
+    </tr>
+    <tr>
+      <td>57</td>
+      <td>Mon</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>281</td>
+      <td>153</td>
+      <td>72</td>
+      <td>56</td>
+      <td>₹36,050</td>
+    </tr>
+    <tr>
+      <td>58</td>
+      <td>Tue</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>327</td>
+      <td>155</td>
+      <td>104</td>
+      <td>68</td>
+      <td>₹45,550</td>
+    </tr>
+    <tr>
+      <td>59</td>
+      <td>Wed</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>292</td>
+      <td>143</td>
+      <td>88</td>
+      <td>61</td>
+      <td>₹40,000</td>
+    </tr>
+    <tr>
+      <td>60</td>
+      <td>Thu</td>
+      <td>Normal</td>
+      <td>x1.0</td>
+      <td>312</td>
+      <td>151</td>
+      <td>102</td>
+      <td>59</td>
+      <td>₹42,700</td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+  </div>
+
+  <footer>🥐 BrotHaus Bakery · Monte Carlo Sales Simulation · Poisson Arrivals · Peak Hours · Promotions</footer>
+
+  <script>
+    const DAYS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100];
+    const BASE_REV = [47550, 41600, 41650, 42850, 41800, 41050, 40700, 41150, 41400, 42750, 39050, 41900, 41800, 40400, 42750, 39750, 44150, 42150, 49450, 36650, 40750, 42450, 43600, 41250, 41050, 42950, 41150, 43000, 37400, 40050, 39450, 41500, 44850, 38800, 41550, 35150, 44500, 39250, 43800, 37600, 37850, 45000, 40750, 38250, 36550, 39500, 36900, 40900, 42650, 37350, 42700, 42150, 37100, 38550, 42150, 41500, 36050, 45550, 40000, 42700, 41000, 40000, 40500, 39700, 39200, 37800, 37050, 40700, 40850, 47150, 39200, 41750, 38750, 42200, 43500, 39050, 43900, 39200, 40400, 37150, 39900, 42850, 40150, 39200, 42800, 41100, 42100, 42800, 40550, 34200, 42000, 37200, 37450, 39600, 39150, 39400, 42700, 40700, 40850, 33250];
+    const PROMO_REV = [34250, 32400, 31250, 32050, 31550, 30500, 31050, 29950, 31000, 29650, 30300, 30500, 28950, 29050, 30250, 28350, 32900, 31700, 35700, 28600, 30950, 31450, 32700, 32850, 30350, 32400, 31200, 32000, 28900, 29200, 29700, 31050, 32200, 27900, 30900, 26600, 33150, 27400, 33250, 27250, 29000, 33800, 28850, 28650, 26650, 29150, 27850, 29600, 30450, 28500, 32250, 29550, 27650, 27350, 30800, 31050, 26750, 34200, 29350, 31550, 30250, 29000, 30200, 29150, 29650, 28400, 27350, 30800, 27900, 34900, 30550, 31750, 29750, 30200, 32450, 29950, 34500, 30050, 29400, 26800, 30100, 31350, 28900, 27900, 32150, 31150, 30700, 29950, 31300, 26150, 31100, 28050, 27100, 29350, 29250, 28700, 32050, 29950, 31700, 24500];
+    const BASE_UNITS = {"Pretzel": 14956, "Bread": 9005, "Cake": 6092};
+    const PROMO_UNITS = {"Pretzel": 20948, "Bread": 6098, "Cake": 3007};
+
+    function makeRevenueTrendChart() {
+      const ctx = document.getElementById('revenueTrendChart');
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: DAYS,
+          datasets: [
+            {
+              label: 'No Promotion',
+              data: BASE_REV,
+              borderColor: '#2b6cb0',
+              backgroundColor: 'rgba(43,108,176,0.1)',
+              tension: 0.25,
+              pointRadius: 2,
+            },
+            {
+              label: 'Pretzel Festival',
+              data: PROMO_REV,
+              borderColor: '#63b3ed',
+              backgroundColor: 'rgba(99,179,237,0.1)',
+              tension: 0.25,
+              pointRadius: 2,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: true },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ' ' + ctx.dataset.label + ': ₹' + Math.round(ctx.parsed.y).toLocaleString('en-IN')
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: {
+                callback: (v) => '₹' + v.toLocaleString('en-IN')
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function makeMixChart(canvasId, units) {
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+      const labels = Object.keys(units);
+      const data = labels.map(k => units[k]);
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: ['#3182ce','#63b3ed','#90cdf4'],
+            borderColor: '#ffffff',
+            borderWidth: 2,
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ' ' + ctx.label + ': ' + ctx.parsed + ' units'
+              }
+            }
+          },
+          cutout: '60%'
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      makeRevenueTrendChart();
+      makeMixChart('mixBaseChart', BASE_UNITS);
+      makeMixChart('mixPromoChart', PROMO_UNITS);
+    });
+  </script>
+</body>
+</html>
