@@ -222,9 +222,40 @@
       margin-bottom: 8px;
     }
     body.light .status-bar { background: rgba(241,245,249,0.95); }
-    .status-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-    .status-dot.open { background: var(--accent-3); box-shadow: 0 0 12px rgba(34,197,94,0.8); }
-    .status-dot.closed { background: var(--danger); box-shadow: 0 0 12px rgba(239,68,68,0.6); }
+    .status-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; position: relative; }
+    .status-dot::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 2px solid transparent;
+    }
+    .status-dot.open {
+      background: var(--accent-3);
+      box-shadow: 0 0 12px rgba(34,197,94,0.8);
+      animation: pulse-open 1.6s ease-out infinite;
+    }
+    .status-dot.open::after {
+      border-color: rgba(34,197,94,0.6);
+    }
+    .status-dot.closed {
+      background: var(--danger);
+      box-shadow: 0 0 12px rgba(239,68,68,0.6);
+      animation: pulse-closed 1.6s ease-out infinite;
+    }
+    .status-dot.closed::after {
+      border-color: rgba(239,68,68,0.6);
+    }
+    @keyframes pulse-open {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.25); opacity: 0.75; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes pulse-closed {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.15); opacity: 0.65; }
+      100% { transform: scale(1); opacity: 1; }
+    }
     .status-text-main { font-size: 12px; font-weight: 600; }
     .status-text-sub { font-size: 10px; color: var(--muted); }
     .stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 6px; margin-top: 6px; }
@@ -488,27 +519,6 @@
           </div>
         </div>
 
-        <div class="field">
-          <div class="field-header">
-            <label>Product prices (₹ per unit)</label>
-          </div>
-          <div class="mix-table-wrap" style="margin-top:4px;">
-            <table class="mix-table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td>Pretzel 🥨</td><td>₹60</td></tr>
-                <tr><td>Bread 🍞</td><td>₹180</td></tr>
-                <tr><td>Cake 🍰</td><td>₹220</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
         <div class="field" style="margin-top:10px;">
           <button id="runBtn" class="btn-primary" type="button">▶ Run 100‑day simulation</button>
         </div>
@@ -565,6 +575,24 @@
                     <td id="mixBaseCakeCell">—</td>
                     <td id="mixPromoCakeCell">—</td>
                   </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div class="card-title" style="margin-bottom:6px;">Product prices (₹ per unit)</div>
+            <div class="mix-table-wrap">
+              <table class="mix-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Pretzel 🥨</td><td>₹60</td></tr>
+                  <tr><td>Bread 🍞</td><td>₹180</td></tr>
+                  <tr><td>Cake 🍰</td><td>₹220</td></tr>
                 </tbody>
               </table>
             </div>
