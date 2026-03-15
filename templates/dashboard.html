@@ -242,6 +242,60 @@
     .stat-value.warn { color: var(--accent-2); }
     .charts-grid { margin-top: 8px; display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; }
     canvas { width: 100% !important; height: 160px !important; }
+    .mix-table-wrap {
+      margin-top: 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(148,163,184,0.3);
+      overflow: hidden;
+      background: rgba(15,23,42,0.4);
+    }
+    body.light .mix-table-wrap {
+      background: rgba(248,250,252,0.95);
+      border-color: rgba(203,213,225,0.9);
+    }
+    .mix-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .mix-table thead {
+      background: linear-gradient(135deg, rgba(148,163,184,0.35), rgba(148,163,184,0.15));
+    }
+    body.light .mix-table thead {
+      background: linear-gradient(135deg, #e2e8f0, #f1f5f9);
+    }
+    .mix-table th,
+    .mix-table td {
+      padding: 6px 8px;
+      text-align: left;
+      border-bottom: 1px solid rgba(30,64,175,0.35);
+    }
+    body.light .mix-table th,
+    body.light .mix-table td {
+      border-bottom-color: rgba(203,213,225,0.9);
+    }
+    .mix-table th {
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 10px;
+      color: var(--muted);
+    }
+    .mix-table tbody tr:nth-child(even) {
+      background: rgba(15,23,42,0.35);
+    }
+    .mix-table tbody tr:nth-child(odd) {
+      background: rgba(15,23,42,0.15);
+    }
+    body.light .mix-table tbody tr:nth-child(even) {
+      background: #ffffff;
+    }
+    body.light .mix-table tbody tr:nth-child(odd) {
+      background: #f8fafc;
+    }
+    .mix-table td {
+      color: var(--text);
+    }
     .mix-panel { margin-bottom: 8px; padding: 8px; border-radius: 8px; background: rgba(15,23,42,0.5); border: 1px solid rgba(148,163,184,0.2); }
     body.light .mix-panel { background: rgba(241,245,249,0.6); }
     .mix-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
@@ -458,8 +512,42 @@
         </div>
 
         <div class="charts-grid">
-          <div><div class="card-title" style="margin-bottom:6px;">Daily revenue (100 days)</div><canvas id="revenueChart"></canvas></div>
-          <div><div class="card-title" style="margin-bottom:6px;">Product mix (units)</div><canvas id="mixChart"></canvas></div>
+          <div>
+            <div class="card-title" style="margin-bottom:6px;">Daily revenue (100 days)</div>
+            <canvas id="revenueChart"></canvas>
+          </div>
+          <div>
+            <div class="card-title" style="margin-bottom:6px;">Product mix (units)</div>
+            <canvas id="mixChart"></canvas>
+            <div class="mix-table-wrap">
+              <table class="mix-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>No promotion · units</th>
+                    <th>Pretzel promotion · units</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Pretzel 🥨</td>
+                    <td id="mixBasePretzelCell">—</td>
+                    <td id="mixPromoPretzelCell">—</td>
+                  </tr>
+                  <tr>
+                    <td>Bread 🍞</td>
+                    <td id="mixBaseBreadCell">—</td>
+                    <td id="mixPromoBreadCell">—</td>
+                  </tr>
+                  <tr>
+                    <td>Cake 🍰</td>
+                    <td id="mixBaseCakeCell">—</td>
+                    <td id="mixPromoCakeCell">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -700,6 +788,7 @@
       const isLight = document.body.classList.contains("light");
       const gridColor = isLight ? "rgba(148,163,184,0.4)" : "rgba(31,41,55,0.6)";
       const tickColor = isLight ? "#64748b" : "#9ca3af";
+      const legendColor = isLight ? "#1e293b" : "#ffffff";
 
       const ctx1 = document.getElementById("revenueChart").getContext("2d");
       if (revenueChart) revenueChart.destroy();
@@ -720,7 +809,7 @@
             x: { grid: { display: false }, ticks: { color: tickColor } },
           },
           plugins: {
-            legend: { labels: { color: isLight ? "#1e293b" : "#e5e7eb", font: { size: 11 } } },
+            legend: { labels: { color: legendColor, font: { size: 11, weight: "600" } } },
             tooltip: { callbacks: { label: c => " " + c.dataset.label + ": " + fmtMoney(c.parsed.y) } },
           },
         },
@@ -731,6 +820,13 @@
       const labels = ["Pretzel", "Bread", "Cake"];
       const baseVals = [baseSummary.total_units.Pretzel_Sales || 0, baseSummary.total_units.Bread_Sales || 0, baseSummary.total_units.Cake_Sales || 0];
       const promoVals = [promoSummary.total_units.Pretzel_Sales || 0, promoSummary.total_units.Bread_Sales || 0, promoSummary.total_units.Cake_Sales || 0];
+      // Update interactive table with exact unit counts
+      document.getElementById("mixBasePretzelCell").textContent = baseVals[0].toLocaleString("en-IN");
+      document.getElementById("mixPromoPretzelCell").textContent = promoVals[0].toLocaleString("en-IN");
+      document.getElementById("mixBaseBreadCell").textContent = baseVals[1].toLocaleString("en-IN");
+      document.getElementById("mixPromoBreadCell").textContent = promoVals[1].toLocaleString("en-IN");
+      document.getElementById("mixBaseCakeCell").textContent = baseVals[2].toLocaleString("en-IN");
+      document.getElementById("mixPromoCakeCell").textContent = promoVals[2].toLocaleString("en-IN");
       mixChart = new Chart(ctx2, {
         type: "bar",
         data: {
@@ -748,7 +844,7 @@
             x: { grid: { display: false }, ticks: { color: tickColor } },
           },
           plugins: {
-            legend: { labels: { color: isLight ? "#1e293b" : "#e5e7eb", font: { size: 11 } } },
+            legend: { labels: { color: legendColor, font: { size: 11, weight: "600" } } },
             tooltip: { callbacks: { label: c => " " + c.dataset.label + ": " + c.parsed.y.toLocaleString("en-IN") + " units" } },
           },
         },
