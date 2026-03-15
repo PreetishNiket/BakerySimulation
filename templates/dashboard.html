@@ -98,7 +98,10 @@
       gap: 12px;
       flex: 1;
       min-height: 0;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
+      align-content: start;
+      align-items: start;
     }
     @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
     .card {
@@ -108,8 +111,8 @@
       padding: 10px 12px;
       box-shadow: 0 14px 45px rgba(0,0,0,0.25);
       transition: background 0.3s, border-color 0.3s;
-      min-height: 0;
-      overflow-y: auto;
+      min-height: min-content;
+      overflow: visible;
       position: relative;
     }
     body.light .card { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
