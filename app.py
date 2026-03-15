@@ -141,30 +141,51 @@ def api_simulate():
     - peak_multiplier: float
     """
     payload = request.get_json(silent=True) or {}
-    params = build_params_from_payload(payload)
+
+    # Base scenario: uses weather/holiday multipliers as given.
+    base_params = build_params_from_payload(payload)
+
+    # Promotion scenario assumptions:
+    # - More customers because of the promotion (e.g. +25% traffic)
+    # - Slightly higher average ticket size (e.g. +10% revenue per customer)
+    promo_params = dict(base_params)
+    base_extra_cust = base_params.get("extra_cust_mult", 1.0)
+    base_extra_rev = base_params.get("extra_rev_mult", 1.0)
+    promo_params["extra_cust_mult"] = base_extra_cust * 1.25
+    promo_params["extra_rev_mult"] = base_extra_rev * 1.10
 
     # Single-day hourly view (no promotion vs promotion)
-    hourly_base, _ = simulate_day(params, use_promotion=False, rng=np.random.default_rng(123))
-    hourly_promo, _ = simulate_day(params, use_promotion=True, rng=np.random.default_rng(456))
+    hourly_base, _ = simulate_day(
+        base_params, use_promotion=False, rng=np.random.default_rng(123)
+    )
+    hourly_promo, _ = simulate_day(
+        promo_params, use_promotion=True, rng=np.random.default_rng(456)
+    )
 
     # 100-day Monte Carlo
-    daily_base = run_monte_carlo(params, n_days=100, use_promotion=False, seed=42)
+    daily_base = run_monte_carlo(
+        base_params, n_days=100, use_promotion=False, seed=42
+    )
     base_summary = summarize_revenue(daily_base)
 
-    daily_promo = run_monte_carlo(params, n_days=100, use_promotion=True, seed=42)
+    daily_promo = run_monte_carlo(
+        promo_params, n_days=100, use_promotion=True, seed=42
+    )
     promo_summary = summarize_revenue(daily_promo)
 
     response = {
         "config": {
-            "opening_hour": params["opening_hour"],
-            "closing_hour": params["closing_hour"],
-            "hours_open": params["hours_open"],
-            "avg_customers_per_hour": params["avg_customers_per_hour"],
-            "peak_start_hour": params["peak_start_hour"],
-            "peak_end_hour": params["peak_end_hour"],
-            "peak_multiplier": params["peak_multiplier"],
-            "extra_cust_mult": params.get("extra_cust_mult", 1.0),
-            "extra_rev_mult": params.get("extra_rev_mult", 1.0),
+            "opening_hour": base_params["opening_hour"],
+            "closing_hour": base_params["closing_hour"],
+            "hours_open": base_params["hours_open"],
+            "avg_customers_per_hour": base_params["avg_customers_per_hour"],
+            "peak_start_hour": base_params["peak_start_hour"],
+            "peak_end_hour": base_params["peak_end_hour"],
+            "peak_multiplier": base_params["peak_multiplier"],
+            "extra_cust_mult_base": base_params.get("extra_cust_mult", 1.0),
+            "extra_rev_mult_base": base_params.get("extra_rev_mult", 1.0),
+            "extra_cust_mult_promo": promo_params.get("extra_cust_mult", 1.0),
+            "extra_rev_mult_promo": promo_params.get("extra_rev_mult", 1.0),
         },
         "base": {
             "summary": _summary_to_json(base_summary),
