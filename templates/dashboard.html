@@ -567,6 +567,53 @@
           <div class="stat"><div class="stat-label">Expected customers / day</div><div class="stat-value" id="statCust">—</div></div>
         </div>
 
+        <div class="card-title" style="margin-top:10px; margin-bottom:4px;">Full‑day forecast (active mix)</div>
+        <div class="mix-table-wrap">
+          <table class="mix-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Total customers</td><td id="fdTotalCust">—</td></tr>
+              <tr><td>Total revenue</td><td id="fdTotalRev">—</td></tr>
+              <tr><td>Open hours</td><td id="fdOpenHours">—</td></tr>
+              <tr><td>Avg revenue / hr</td><td id="fdAvgPerHour">—</td></tr>
+              <tr><td>Peak hour</td><td id="fdPeakHour">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mix-table-wrap" style="margin-top:6px;">
+          <table class="mix-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Units / day</th>
+                <th>Revenue / day</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Pretzel 🥨</td>
+                <td id="fdPretzelUnits">—</td>
+                <td id="fdPretzelRev">—</td>
+              </tr>
+              <tr>
+                <td>Bread 🍞</td>
+                <td id="fdBreadUnits">—</td>
+                <td id="fdBreadRev">—</td>
+              </tr>
+              <tr>
+                <td>Cake 🍰</td>
+                <td id="fdCakeUnits">—</td>
+                <td id="fdCakeRev">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <div class="charts-grid">
           <div>
             <div class="card-title" style="margin-bottom:6px;">Daily revenue (100 days)</div>
@@ -855,17 +902,40 @@
       const gridColor = isLight ? "rgba(148,163,184,0.4)" : "rgba(31,41,55,0.6)";
       const tickColor = isLight ? "#64748b" : "#9ca3af";
       const legendColor = isLight ? "#1e293b" : "#ffffff";
+      const viewMode = mixMode; // 'base' or 'promo'
 
       const ctx1 = document.getElementById("revenueChart").getContext("2d");
       if (revenueChart) revenueChart.destroy();
+      const revenueLabels = base.daily.map(d => d.Day);
+      let revenueDatasets;
+      if (viewMode === "promo") {
+        revenueDatasets = [
+          {
+            label: "Pretzel promotion",
+            data: promo.daily.map(d => d.Total_Revenue),
+            borderColor: "rgba(96,165,250,1)",
+            backgroundColor: "rgba(96,165,250,0.2)",
+            tension: 0.25,
+            pointRadius: 0,
+          },
+        ];
+      } else {
+        revenueDatasets = [
+          {
+            label: "No promotion",
+            data: base.daily.map(d => d.Total_Revenue),
+            borderColor: "rgba(148,163,184,0.9)",
+            backgroundColor: "rgba(148,163,184,0.18)",
+            tension: 0.25,
+            pointRadius: 0,
+          },
+        ];
+      }
       revenueChart = new Chart(ctx1, {
         type: "line",
         data: {
-          labels: base.daily.map(d => d.Day),
-          datasets: [
-            { label: "No promotion", data: base.daily.map(d => d.Total_Revenue), borderColor: "rgba(148,163,184,0.9)", backgroundColor: "rgba(148,163,184,0.18)", tension: 0.25, pointRadius: 0 },
-            { label: "Pretzel promotion", data: promo.daily.map(d => d.Total_Revenue), borderColor: "rgba(96,165,250,1)", backgroundColor: "rgba(96,165,250,0.2)", tension: 0.25, pointRadius: 0 },
-          ],
+          labels: revenueLabels,
+          datasets: revenueDatasets,
         },
         options: {
           responsive: true,
@@ -886,20 +956,34 @@
       const labels = ["Pretzel", "Bread", "Cake"];
       const baseVals = [baseSummary.total_units.Pretzel_Sales || 0, baseSummary.total_units.Bread_Sales || 0, baseSummary.total_units.Cake_Sales || 0];
       const promoVals = [promoSummary.total_units.Pretzel_Sales || 0, promoSummary.total_units.Bread_Sales || 0, promoSummary.total_units.Cake_Sales || 0];
-      // Update interactive table with exact unit counts
-      document.getElementById("mixBasePretzelCell").textContent = baseVals[0].toLocaleString("en-IN");
-      document.getElementById("mixPromoPretzelCell").textContent = promoVals[0].toLocaleString("en-IN");
-      document.getElementById("mixBaseBreadCell").textContent = baseVals[1].toLocaleString("en-IN");
-      document.getElementById("mixPromoBreadCell").textContent = promoVals[1].toLocaleString("en-IN");
-      document.getElementById("mixBaseCakeCell").textContent = baseVals[2].toLocaleString("en-IN");
-      document.getElementById("mixPromoCakeCell").textContent = promoVals[2].toLocaleString("en-IN");
+
+      // Update interactive table with exact unit counts depending on view
+      if (viewMode === "promo") {
+        document.getElementById("mixBasePretzelCell").textContent = "—";
+        document.getElementById("mixBaseBreadCell").textContent = "—";
+        document.getElementById("mixBaseCakeCell").textContent = "—";
+        document.getElementById("mixPromoPretzelCell").textContent = promoVals[0].toLocaleString("en-IN");
+        document.getElementById("mixPromoBreadCell").textContent = promoVals[1].toLocaleString("en-IN");
+        document.getElementById("mixPromoCakeCell").textContent = promoVals[2].toLocaleString("en-IN");
+      } else {
+        document.getElementById("mixBasePretzelCell").textContent = baseVals[0].toLocaleString("en-IN");
+        document.getElementById("mixBaseBreadCell").textContent = baseVals[1].toLocaleString("en-IN");
+        document.getElementById("mixBaseCakeCell").textContent = baseVals[2].toLocaleString("en-IN");
+        document.getElementById("mixPromoPretzelCell").textContent = "—";
+        document.getElementById("mixPromoBreadCell").textContent = "—";
+        document.getElementById("mixPromoCakeCell").textContent = "—";
+      }
+
+      const mixData = viewMode === "promo" ? promoVals : baseVals;
+      const mixLabel = viewMode === "promo" ? "Pretzel promotion" : "No promotion";
+      const mixColor = viewMode === "promo" ? "rgba(96,165,250,0.85)" : "rgba(249,115,22,0.7)";
+
       mixChart = new Chart(ctx2, {
         type: "bar",
         data: {
           labels,
           datasets: [
-            { label: "No promotion", data: baseVals, backgroundColor: "rgba(249,115,22,0.7)", borderRadius: 6, maxBarThickness: 26 },
-            { label: "Pretzel promotion", data: promoVals, backgroundColor: "rgba(96,165,250,0.85)", borderRadius: 6, maxBarThickness: 26 },
+            { label: mixLabel, data: mixData, backgroundColor: mixColor, borderRadius: 6, maxBarThickness: 26 },
           ],
         },
         options: {
@@ -915,6 +999,39 @@
           },
         },
       });
+
+      // Full‑day forecast summary based on active mix using single-day hourly view
+      const hourlyActive = viewMode === "promo" ? promo.hourly : base.hourly;
+      if (hourlyActive && hourlyActive.length) {
+        const totalCust = hourlyActive.reduce((a, d) => a + (d.Customers || 0), 0);
+        const totalRev = hourlyActive.reduce((a, d) => a + (d.Total_Revenue || 0), 0);
+        const avgPerHour = cfg.hours_open > 0 ? totalRev / cfg.hours_open : 0;
+        const peakRow = hourlyActive.reduce(
+          (best, d) => (d.Customers || 0) > (best.Customers || 0) ? d : best,
+          hourlyActive[0]
+        );
+
+        const pretUnits = hourlyActive.reduce((a, d) => a + (d.Pretzel_Sales || 0), 0);
+        const breadUnits = hourlyActive.reduce((a, d) => a + (d.Bread_Sales || 0), 0);
+        const cakeUnits = hourlyActive.reduce((a, d) => a + (d.Cake_Sales || 0), 0);
+        const pretRev = hourlyActive.reduce((a, d) => a + (d.Pretzel_Revenue || 0), 0);
+        const breadRev = hourlyActive.reduce((a, d) => a + (d.Bread_Revenue || 0), 0);
+        const cakeRev = hourlyActive.reduce((a, d) => a + (d.Cake_Revenue || 0), 0);
+
+        document.getElementById("fdTotalCust").textContent = totalCust.toLocaleString("en-IN");
+        document.getElementById("fdTotalRev").textContent = fmtMoney(totalRev);
+        document.getElementById("fdOpenHours").textContent = cfg.hours_open + " hrs";
+        document.getElementById("fdAvgPerHour").textContent = fmtMoney(avgPerHour);
+        document.getElementById("fdPeakHour").textContent =
+          (peakRow.Hour || "") + " · " + (peakRow.Customers || 0).toLocaleString("en-IN") + " customers";
+
+        document.getElementById("fdPretzelUnits").textContent = pretUnits.toLocaleString("en-IN");
+        document.getElementById("fdBreadUnits").textContent = breadUnits.toLocaleString("en-IN");
+        document.getElementById("fdCakeUnits").textContent = cakeUnits.toLocaleString("en-IN");
+        document.getElementById("fdPretzelRev").textContent = fmtMoney(pretRev);
+        document.getElementById("fdBreadRev").textContent = fmtMoney(breadRev);
+        document.getElementById("fdCakeRev").textContent = fmtMoney(cakeRev);
+      }
     }
 
     const DEFAULTS = {
