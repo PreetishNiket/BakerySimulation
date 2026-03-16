@@ -590,7 +590,7 @@
             <thead>
               <tr>
                 <th>Product</th>
-                <th>Units / day</th>
+                <th>Units / day (active mix)</th>
                 <th>Revenue / day</th>
               </tr>
             </thead>
@@ -613,14 +613,13 @@
             </tbody>
           </table>
         </div>
-
         <div class="charts-grid">
           <div>
             <div class="card-title" style="margin-bottom:6px;">Daily revenue (100 days)</div>
             <canvas id="revenueChart"></canvas>
           </div>
           <div>
-            <div class="card-title" style="margin-bottom:6px;">Product mix (units)</div>
+            <div class="card-title" style="margin-bottom:6px;">Graph view · product mix (units)</div>
             <canvas id="mixChart"></canvas>
             <div class="mix-table-wrap">
               <table class="mix-table">
@@ -903,6 +902,7 @@
       const tickColor = isLight ? "#64748b" : "#9ca3af";
       const legendColor = isLight ? "#1e293b" : "#ffffff";
       const viewMode = mixMode; // 'base' or 'promo'
+      const activeSummary = viewMode === "promo" ? promoSummary : baseSummary;
 
       const ctx1 = document.getElementById("revenueChart").getContext("2d");
       if (revenueChart) revenueChart.destroy();
@@ -1011,13 +1011,6 @@
           hourlyActive[0]
         );
 
-        const pretUnits = hourlyActive.reduce((a, d) => a + (d.Pretzel_Sales || 0), 0);
-        const breadUnits = hourlyActive.reduce((a, d) => a + (d.Bread_Sales || 0), 0);
-        const cakeUnits = hourlyActive.reduce((a, d) => a + (d.Cake_Sales || 0), 0);
-        const pretRev = hourlyActive.reduce((a, d) => a + (d.Pretzel_Revenue || 0), 0);
-        const breadRev = hourlyActive.reduce((a, d) => a + (d.Bread_Revenue || 0), 0);
-        const cakeRev = hourlyActive.reduce((a, d) => a + (d.Cake_Revenue || 0), 0);
-
         document.getElementById("fdTotalCust").textContent = totalCust.toLocaleString("en-IN");
         document.getElementById("fdTotalRev").textContent = fmtMoney(totalRev);
         document.getElementById("fdOpenHours").textContent = cfg.hours_open + " hrs";
@@ -1025,12 +1018,25 @@
         document.getElementById("fdPeakHour").textContent =
           (peakRow.Hour || "") + " · " + (peakRow.Customers || 0).toLocaleString("en-IN") + " customers";
 
-        document.getElementById("fdPretzelUnits").textContent = pretUnits.toLocaleString("en-IN");
-        document.getElementById("fdBreadUnits").textContent = breadUnits.toLocaleString("en-IN");
-        document.getElementById("fdCakeUnits").textContent = cakeUnits.toLocaleString("en-IN");
-        document.getElementById("fdPretzelRev").textContent = fmtMoney(pretRev);
-        document.getElementById("fdBreadRev").textContent = fmtMoney(breadRev);
-        document.getElementById("fdCakeRev").textContent = fmtMoney(cakeRev);
+        // Use summary totals (already ratio-correct) to compute expected units/day and revenue/day.
+        const daysSimulated = (viewMode === "promo" ? promo.daily : base.daily).length || 1;
+        const tUnits = activeSummary.total_units || {};
+        const pretUnitsDay = (tUnits.Pretzel_Sales || 0) / daysSimulated;
+        const breadUnitsDay = (tUnits.Bread_Sales || 0) / daysSimulated;
+        const cakeUnitsDay = (tUnits.Cake_Sales || 0) / daysSimulated;
+
+        const pricesActive = {
+          Pretzel: parseFloat(pricePretzelInput.value) || {{ defaults.prices.Pretzel }},
+          Bread: parseFloat(priceBreadInput.value) || {{ defaults.prices.Bread }},
+          Cake: parseFloat(priceCakeInput.value) || {{ defaults.prices.Cake }},
+        };
+
+        document.getElementById("fdPretzelUnits").textContent = pretUnitsDay.toFixed(1);
+        document.getElementById("fdBreadUnits").textContent = breadUnitsDay.toFixed(1);
+        document.getElementById("fdCakeUnits").textContent = cakeUnitsDay.toFixed(1);
+        document.getElementById("fdPretzelRev").textContent = fmtMoney(pretUnitsDay * pricesActive.Pretzel);
+        document.getElementById("fdBreadRev").textContent = fmtMoney(breadUnitsDay * pricesActive.Bread);
+        document.getElementById("fdCakeRev").textContent = fmtMoney(cakeUnitsDay * pricesActive.Cake);
       }
     }
 
