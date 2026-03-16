@@ -619,7 +619,7 @@
             <canvas id="revenueChart"></canvas>
           </div>
           <div>
-            <div class="card-title" style="margin-bottom:6px;">Graph view · product mix (units)</div>
+            <div class="card-title" style="margin-bottom:6px;">Graph view · product mix (units · derived from model)</div>
             <canvas id="mixChart"></canvas>
             <div class="mix-table-wrap">
               <table class="mix-table">
@@ -1031,12 +1031,16 @@
           Cake: parseFloat(priceCakeInput.value) || {{ defaults.prices.Cake }},
         };
 
-        document.getElementById("fdPretzelUnits").textContent = pretUnitsDay.toFixed(1);
-        document.getElementById("fdBreadUnits").textContent = breadUnitsDay.toFixed(1);
-        document.getElementById("fdCakeUnits").textContent = cakeUnitsDay.toFixed(1);
-        document.getElementById("fdPretzelRev").textContent = fmtMoney(pretUnitsDay * pricesActive.Pretzel);
-        document.getElementById("fdBreadRev").textContent = fmtMoney(breadUnitsDay * pricesActive.Bread);
-        document.getElementById("fdCakeRev").textContent = fmtMoney(cakeUnitsDay * pricesActive.Cake);
+        const pretUnitsRounded = Math.round(pretUnitsDay);
+        const breadUnitsRounded = Math.round(breadUnitsDay);
+        const cakeUnitsRounded = Math.round(cakeUnitsDay);
+
+        document.getElementById("fdPretzelUnits").textContent = pretUnitsRounded.toLocaleString("en-IN");
+        document.getElementById("fdBreadUnits").textContent = breadUnitsRounded.toLocaleString("en-IN");
+        document.getElementById("fdCakeUnits").textContent = cakeUnitsRounded.toLocaleString("en-IN");
+        document.getElementById("fdPretzelRev").textContent = fmtMoney(pretUnitsRounded * pricesActive.Pretzel);
+        document.getElementById("fdBreadRev").textContent = fmtMoney(breadUnitsRounded * pricesActive.Bread);
+        document.getElementById("fdCakeRev").textContent = fmtMoney(cakeUnitsRounded * pricesActive.Cake);
       }
     }
 
