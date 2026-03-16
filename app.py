@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 import numpy as np
+import pandas as pd
 
 from brothaus_simulation import (
     get_default_params,
@@ -188,6 +189,26 @@ def api_simulate():
         promo_params, n_days=100, use_promotion=True, seed=42
     )
     promo_summary = summarize_revenue(daily_promo)
+
+    # Override unit totals to strictly follow mix ratios using total customers.
+    total_cust_base = int(daily_base["Customers"].sum())
+    total_cust_promo = int(daily_promo["Customers"].sum())
+    base_mix = base_params["base_probs"]
+    promo_mix = promo_params["promo_probs"]
+    base_summary["total_units"] = pd.Series(
+        {
+            "Pretzel_Sales": int(round(total_cust_base * base_mix["Pretzel"])),
+            "Bread_Sales": int(round(total_cust_base * base_mix["Bread"])),
+            "Cake_Sales": int(round(total_cust_base * base_mix["Cake"])),
+        }
+    )
+    promo_summary["total_units"] = pd.Series(
+        {
+            "Pretzel_Sales": int(round(total_cust_promo * promo_mix["Pretzel"])),
+            "Bread_Sales": int(round(total_cust_promo * promo_mix["Bread"])),
+            "Cake_Sales": int(round(total_cust_promo * promo_mix["Cake"])),
+        }
+    )
 
     response = {
         "config": {
