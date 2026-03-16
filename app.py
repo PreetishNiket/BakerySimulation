@@ -61,6 +61,28 @@ def _parse_prices(payload: dict, key: str, default: dict) -> dict:
     return prices
 
 
+def _alloc_units_by_ratio(total_customers: int, probs: dict) -> dict:
+    """
+    Allocate an integer number of units per product so that:
+    - The counts are as close as possible to total_customers * probs[product]
+    - The integer counts sum exactly to total_customers.
+    """
+    keys = ["Pretzel", "Bread", "Cake"]
+    raw = {k: total_customers * float(probs.get(k, 0.0)) for k in keys}
+    floors = {k: int(raw[k]) for k in keys}
+    remainder = total_customers - sum(floors.values())
+    # Distribute remaining customers to products with largest fractional parts
+    frac_order = sorted(
+        keys, key=lambda k: raw[k] - floors[k], reverse=True
+    )
+    for k in frac_order:
+        if remainder <= 0:
+            break
+        floors[k] += 1
+        remainder -= 1
+    return floors
+
+
 def build_params_from_payload(payload: dict) -> dict:
     """
     Build a simulation parameter dict from JSON payload.
@@ -190,23 +212,28 @@ def api_simulate():
     )
     promo_summary = summarize_revenue(daily_promo)
 
-    # Override unit totals to strictly follow mix ratios using total customers.
+    # Override unit totals to follow mix ratios using integer allocation that sums
+    # exactly to total customers.
     total_cust_base = int(daily_base["Customers"].sum())
     total_cust_promo = int(daily_promo["Customers"].sum())
     base_mix = base_params["base_probs"]
     promo_mix = promo_params["promo_probs"]
+
+    base_units = _alloc_units_by_ratio(total_cust_base, base_mix)
+    promo_units = _alloc_units_by_ratio(total_cust_promo, promo_mix)
+
     base_summary["total_units"] = pd.Series(
         {
-            "Pretzel_Sales": int(round(total_cust_base * base_mix["Pretzel"])),
-            "Bread_Sales": int(round(total_cust_base * base_mix["Bread"])),
-            "Cake_Sales": int(round(total_cust_base * base_mix["Cake"])),
+            "Pretzel_Sales": base_units["Pretzel"],
+            "Bread_Sales": base_units["Bread"],
+            "Cake_Sales": base_units["Cake"],
         }
     )
     promo_summary["total_units"] = pd.Series(
         {
-            "Pretzel_Sales": int(round(total_cust_promo * promo_mix["Pretzel"])),
-            "Bread_Sales": int(round(total_cust_promo * promo_mix["Bread"])),
-            "Cake_Sales": int(round(total_cust_promo * promo_mix["Cake"])),
+            "Pretzel_Sales": promo_units["Pretzel"],
+            "Bread_Sales": promo_units["Bread"],
+            "Cake_Sales": promo_units["Cake"],
         }
     )
 
